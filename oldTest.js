@@ -5,7 +5,7 @@ const { NFTStorage, File, Blob } = require("nft.storage");
 require("dotenv").config();
 
 // built in node module for reading files
-const fs = require("fs/promises");
+const fs = require("fs");
 
 // module that helps us determine a file type
 const mime = require("mime");
@@ -19,78 +19,75 @@ const flclient = new NFTStorage({ token: NFT_STORAGE_KEY });
 
 // NOT REQUIRED
 // "image/jpg" => ".jpg"
-function fileExtension(contentType) {
+function getFileExtension(contentType) {
   return "." + contentType.split("/")[1]
 }
 
 
-// uploads nft (image/video) to filecoin/nft.storage, returns Token object
-async function uploadNFTMetadata(image, contentType, nftMetadata) {
-  // image = object- Buffer
+// video support- but with warnings
+async function uploadNFTMetadataV2(image, contentType, nftMetadata) {
+  // image = string- base64
   // contentType ex. = "image/jpg", "video/mp4", ...
-  const imageFile = new File([image], nftMetadata.name + fileExtension(contentType), { type: contentType });
-  // const imageFile = new File([image], nftMetadata.name, { type: contentType }); // THIS WORKS ALSO
+
+  // convert base64 string to object buffer
+  let imageBuffer = Buffer.from(image, "base64")
+
+  const fileExtension = getFileExtension(contentType)
+
+  const imageFile = new File(
+      [imageBuffer],
+      nftMetadata.name + fileExtension, // fileExtension not required
+      { type: contentType }
+  )
 
   // stores ERC1155 nft data
   const metadata = await flclient.store({
-    ...nftMetadata,
-    image: imageFile, // nft.storage recommends this should be a thumbnail image instead of a video (if content is video)
-    properties: {
-      type: contentType,
-      video: imageFile
-    }
-  });
-  console.log("metadata: ", metadata);
+      ...nftMetadata,
+      image: imageFile // filecoin docs recommends this should be a thumbnail image instead of a video (if content is video)
+  })
+  console.log("metadata: ", metadata)
   //=> Token
   // {
-  //   ipnft: 'bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie',
-  //   url: 'ipfs://bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json'
+  //   ipnft: 'bafyreidfwcgv6wdmsoxf4jba3zbztap26m5zbwp5jacmdz7kggbuvdgb2m',
+  //   url: 'ipfs://bafyreidfwcgv6wdmsoxf4jba3zbztap26m5zbwp5jacmdz7kggbuvdgb2m/metadata.json'
   // }
   
-  console.log(" ")
-  console.log("Content ID (CID):", metadata.ipnft) 
-  // => "bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie"
-  
-  console.log(" ")
-  console.log("IPFS URL (Metadata URI):", metadata.url);
-  //=> "ipfs://bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json"
-  
-  console.log(" ")
-  console.log("metadata.json contents:", metadata.data);
+  console.log("Content ID (CID):", metadata.ipnft)
+  // => "bafyreidfwcgv6wdmsoxf4jba3zbztap26m5zbwp5jacmdz7kggbuvdgb2m"
+
+  console.log("IPFS URL (Metadata URI):", metadata.url)
+  //=> "ipfs://bafyreidfwcgv6wdmsoxf4jba3zbztap26m5zbwp5jacmdz7kggbuvdgb2m/metadata.json"
+
+  console.log("http Metadata URL: ", `https://nftstorage.link/ipfs/${metadata.ipnft}/metadata.json`)
+  //=> https://nftstorage.link/ipfs/bafyreidfwcgv6wdmsoxf4jba3zbztap26m5zbwp5jacmdz7kggbuvdgb2m/metadata.json
+
+  console.log("http image URL: ", `https://nftstorage.link/ipfs/${metadata?.data?.image?.href?.slice(7)}`)
+  //=> https://nftstorage.link/ipfs/bafybeifuqz2meine4uffnrbpy3uz6fq4rkcmsi5uojstoembcfosymnzcq/TEST%209%20-%20sailboat-starry-night.mp4
+
+  console.log("metadata.json contents:", metadata.data)
   //=>
   // {
-  //   name: 'TEST 4 - string-theory',
-  //   description: 'TEST 4 DESCRIPTION',
+  //   name: 'TEST 9 - sailboat-starry-night',
+  //   description: 'TEST 9 DESCRIPTION',
   //   external_url: '',
   //   attributes: [],
   //   image: URL {
-  //     href: 'ipfs://bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a/TEST%204%20-%20string-theory.gif',
+  //     href: 'ipfs://bafybeifuqz2meine4uffnrbpy3uz6fq4rkcmsi5uojstoembcfosymnzcq/TEST%209%20-%20sailboat-starry-night.mp4',
   //     origin: 'null',
   //     protocol: 'ipfs:',
   //     username: '',
   //     password: '',
-  //     host: 'bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a',
-  //     hostname: 'bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a',
+  //     host: 'bafybeifuqz2meine4uffnrbpy3uz6fq4rkcmsi5uojstoembcfosymnzcq',
+  //     hostname: 'bafybeifuqz2meine4uffnrbpy3uz6fq4rkcmsi5uojstoembcfosymnzcq',
   //     port: '',
-  //     pathname: '/TEST%204%20-%20string-theory.gif',
+  //     pathname: '/TEST%209%20-%20sailboat-starry-night.mp4',
   //     search: '',
   //     searchParams: URLSearchParams {},
   //     hash: ''
   //   }
   // }
 
-  console.log(" ");
-  console.log("http metadata link: ", `https://nftstorage.link/ipfs/${metadata.ipnft}/metadata.json`)
-
-  // NOTE
-  // - IPFS addresses can only be accsessed by 1) using certain browsers (ex. Brave), 2) an HTTP gateway, or 3) locally
-  // - HTTP Gateway = provide a bridge between the P2P IPFS protocol and HTTP
-  //	 - https://<gateway-host>/ipfs/
-  //   - ex. nftstorage.link gateway
-  //   - https://nftstorage.link/ipfs/bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json
-  //   - https://nftstorage.link/ipfs/bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a/TEST%204%20-%20string-theory.gif
-
-  return metadata; //=> Token object
+  return metadata //=> Token object
 }
 
 
@@ -100,20 +97,19 @@ async function main() {
   const filePath = "./sailboat-starry-night.mp4";
 
   // read in file, and convert to base64 image
-  // const base64Image = await fs.readFile(filePath, { encoding: "base64" }); // string- base64
-  const image = await fs.readFile(filePath); // object- Buffer
+  const base64Image = await fs.promises.readFile(filePath, { encoding: "base64", }); // string- base64
   
   // get file type. ex "image/gif"
   const fileType = mime.getType(filePath);
 
   const metadata = {
-    name: "TEST 8 - sailboat-starry-night",
-    description: "TEST 8 DESCRIPTION",
+    name: "TEST 9 - sailboat-starry-night",
+    description: "TEST 9 DESCRIPTION",
     external_url: "",
     attributes: [],
   };
 
-  return await uploadNFTMetadata(image, fileType, metadata);
+  return await uploadNFTMetadataV2(base64Image, fileType, metadata);
 }
 
 
