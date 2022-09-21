@@ -31,11 +31,14 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
   console.log("metadata: ", metadata);
   //=> Token
   // {
-  //   ipnft: 'bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m',
+  //   ipnft: 'bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m', // CID (Content ID)- unique identification for upload
   //   url: 'ipfs://bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json'
   // }
 
-  console.log("IPFS URL for the metadata:", metadata.url);
+  console.log("Content ID (CID", metadata.ipnft) 
+  // => "bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m"
+
+  console.log("IPFS URL (Metadata URI):", metadata.url);
   //=> "ipfs://bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json"
 
   console.log("metadata.json contents:", metadata.data);
@@ -61,6 +64,13 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
   //   }
   // }
 
+  // NOTE
+  // - IPFS addresses can only be accsessed by 1) using certain browsers (ex. Brave), 2) an HTTP gateway, or 3) locally
+  // - HTTP Gateway = provide a bridge between the P2P IPFS protocol and HTTP
+  //	 - https://<gateway-host>/ipfs/
+  //   - ex. nftstorage.link gateway
+  //   - https://nftstorage.link/ipfs/bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json
+
   return metadata; //=> Token object
 }
 
@@ -76,8 +86,8 @@ async function main() {
   const fileType = mime.getType(filePath);
 
   const metadata = {
-    name: "TEST 1 - string-theory gif",
-    description: "TEST 1 DESCRIPTION",
+    name: "TEST 2 - string-theory gif",
+    description: "TEST 2 DESCRIPTION",
     external_url: "",
     attributes: [],
   };
