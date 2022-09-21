@@ -17,11 +17,19 @@ const NFT_STORAGE_KEY = process.env.NFT_STORAGE_KEY;
 const flclient = new NFTStorage({ token: NFT_STORAGE_KEY });
 
 
+// NOT REQUIRED
+// "image/jpg" => ".jpg"
+function fileExtension(contentType) {
+  return "." + contentType.split("/")[1]
+}
+
+
 // uploads nft (image/video) to filecoin/nft.storage, returns Token object
 async function uploadNFTMetadata(image, contentType, nftMetadata) {
-  // image = string base64
+  // image = object- Buffer
   // contentType ex. = "image/jpg", "video/mp4", ...
-  const imageFile = new File([image], nftMetadata.name, { type: contentType });
+  const imageFile = new File([image], nftMetadata.name + fileExtension(contentType), { type: contentType });
+  // const imageFile = new File([image], nftMetadata.name, { type: contentType }); // THIS WORKS ALSO
 
   // stores ERC1155 nft data
   const metadata = await flclient.store({
@@ -31,33 +39,33 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
   console.log("metadata: ", metadata);
   //=> Token
   // {
-  //   ipnft: 'bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m', // CID (Content ID)- unique identification for upload
-  //   url: 'ipfs://bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json'
+  //   ipnft: 'bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie',
+  //   url: 'ipfs://bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json'
   // }
-
-  console.log("Content ID (CID", metadata.ipnft) 
-  // => "bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m"
+  
+  console.log("Content ID (CID):", metadata.ipnft) 
+  // => "bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie"
 
   console.log("IPFS URL (Metadata URI):", metadata.url);
-  //=> "ipfs://bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json"
+  //=> "ipfs://bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json"
 
   console.log("metadata.json contents:", metadata.data);
   //=>
   // {
-  //   name: 'TEST 1 - string-theory gif',
-  //   description: 'TEST 1 DESCRIPTION',
+  //   name: 'TEST 4 - string-theory',
+  //   description: 'TEST 4 DESCRIPTION',
   //   external_url: '',
   //   attributes: [],
   //   image: URL {
-  //     href: 'ipfs://bafybeib237qec626ym57qtzwp7vquom4ik42v7stxirdjh74fzryts466e/TEST%201%20-%20string-theory%20gif',
+  //     href: 'ipfs://bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a/TEST%204%20-%20string-theory.gif',
   //     origin: 'null',
   //     protocol: 'ipfs:',
   //     username: '',
   //     password: '',
-  //     host: 'bafybeib237qec626ym57qtzwp7vquom4ik42v7stxirdjh74fzryts466e',
-  //     hostname: 'bafybeib237qec626ym57qtzwp7vquom4ik42v7stxirdjh74fzryts466e',
+  //     host: 'bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a',
+  //     hostname: 'bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a',
   //     port: '',
-  //     pathname: '/TEST%201%20-%20string-theory%20gif',
+  //     pathname: '/TEST%204%20-%20string-theory.gif',
   //     search: '',
   //     searchParams: URLSearchParams {},
   //     hash: ''
@@ -69,7 +77,8 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
   // - HTTP Gateway = provide a bridge between the P2P IPFS protocol and HTTP
   //	 - https://<gateway-host>/ipfs/
   //   - ex. nftstorage.link gateway
-  //   - https://nftstorage.link/ipfs/bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json
+  //   - https://nftstorage.link/ipfs/bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json
+  //   - https://nftstorage.link/ipfs/bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a/TEST%204%20-%20string-theory.gif
 
   return metadata; //=> Token object
 }
@@ -80,19 +89,20 @@ async function main() {
   const filePath = "./string-theory.gif";
 
   // read in file, and convert to base64 image
-  const base64Image = await fs.readFile(filePath, { encoding: "base64" }); // string- base64
-
+  // const base64Image = await fs.readFile(filePath, { encoding: "base64" }); // string- base64
+  const image = await fs.readFile(filePath); // object- Buffer
+  
   // get file type. ex "image/gif"
   const fileType = mime.getType(filePath);
 
   const metadata = {
-    name: "TEST 2 - string-theory gif",
-    description: "TEST 2 DESCRIPTION",
+    name: "TEST 4 - string-theory",
+    description: "TEST 4 DESCRIPTION",
     external_url: "",
     attributes: [],
   };
 
-  return await uploadNFTMetadata(base64Image, fileType, metadata);
+  return await uploadNFTMetadata(image, fileType, metadata);
 }
 
 
