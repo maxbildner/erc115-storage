@@ -1,32 +1,90 @@
 // Import the NFTStorage class and File constructor from the 'nft.storage' package
-// import { NFTStorage, File } from "nft.storage";
-
-// require("dotenv/config");
-require("dotenv").config();
 const { NFTStorage, File, Blob } = require("nft.storage");
 
-// const NFT_STORAGE_KEY = "REPLACE_ME_WITH_YOUR_KEY";
+// allows us to access node process environment variables
+require("dotenv").config();
 
-/**
- * The main entry point for the script that checks the command line arguments and
- * calls storeNFT.
- *
- * To simplify the example, we don't do any fancy command line parsing. Just three
- * positional arguments for imagePath, name, and description
- */
-async function main() {
-  // const args = process.argv.slice(2);
-  // if (args.length !== 3) {
-  //   console.error(
-  //     `usage: ${process.argv[0]} ${process.argv[1]} <image-path> <name> <description>`
-  //   );
-  //   process.exit(1);
+// built in node module for reading files
+const fs = require("fs/promises");
+
+// module that helps us determine a file type
+const mime = require("mime");
+
+// api key
+const NFT_STORAGE_KEY = process.env.NFT_STORAGE_KEY;
+
+// create a new NFTStorage client using our API key
+const flclient = new NFTStorage({ token: NFT_STORAGE_KEY });
+
+
+// uploads nft (image/video) to filecoin/nft.storage, returns Token object
+async function uploadNFTMetadata(image, contentType, nftMetadata) {
+  // image = string base64
+  // contentType ex. = "image/jpg", "video/mp4", ...
+  const imageFile = new File([image], nftMetadata.name, { type: contentType });
+
+  // stores ERC1155 nft data
+  const metadata = await flclient.store({
+    ...nftMetadata,
+    image: imageFile,
+  });
+  console.log("metadata: ", metadata);
+  //=> Token
+  // {
+  //   ipnft: 'bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m',
+  //   url: 'ipfs://bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json'
   // }
-  // const [imagePath, name, description] = args;
-  // const result = await storeNFT(imagePath, name, description);
-  // console.log(result);
-  console.log("process.env.NFT_STORAGE_KEY", process.env.NFT_STORAGE_KEY);
+
+  console.log("IPFS URL for the metadata:", metadata.url);
+  //=> "ipfs://bafyreibeu4325t4orezynmgqqjwqjaewz5ajfs6dxp74np45qlrkjuyz6m/metadata.json"
+
+  console.log("metadata.json contents:", metadata.data);
+  //=>
+  // {
+  //   name: 'TEST 1 - string-theory gif',
+  //   description: 'TEST 1 DESCRIPTION',
+  //   external_url: '',
+  //   attributes: [],
+  //   image: URL {
+  //     href: 'ipfs://bafybeib237qec626ym57qtzwp7vquom4ik42v7stxirdjh74fzryts466e/TEST%201%20-%20string-theory%20gif',
+  //     origin: 'null',
+  //     protocol: 'ipfs:',
+  //     username: '',
+  //     password: '',
+  //     host: 'bafybeib237qec626ym57qtzwp7vquom4ik42v7stxirdjh74fzryts466e',
+  //     hostname: 'bafybeib237qec626ym57qtzwp7vquom4ik42v7stxirdjh74fzryts466e',
+  //     port: '',
+  //     pathname: '/TEST%201%20-%20string-theory%20gif',
+  //     search: '',
+  //     searchParams: URLSearchParams {},
+  //     hash: ''
+  //   }
+  // }
+
+  return metadata; //=> Token object
 }
+
+
+// The main entry point for the script
+async function main() {
+  const filePath = "./string-theory.gif";
+
+  // read in file, and convert to base64 image
+  const base64Image = await fs.readFile(filePath, { encoding: "base64" }); // string- base64
+
+  // get file type. ex "image/gif"
+  const fileType = mime.getType(filePath);
+
+  const metadata = {
+    name: "TEST 1 - string-theory gif",
+    description: "TEST 1 DESCRIPTION",
+    external_url: "",
+    attributes: [],
+  };
+
+  return await uploadNFTMetadata(base64Image, fileType, metadata);
+}
+
 
 // Don't forget to actually call the main function!
 // We can't `await` things at the top level, so this adds
