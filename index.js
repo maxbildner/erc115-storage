@@ -178,10 +178,9 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
 		//   - ex. nftstorage.link gateway
 		//   - https://nftstorage.link/ipfs/bafyreidrdhqlfsyyo5sp5ejpnap4qllzbh7iofbdsgsar5dwtpy73xspie/metadata.json
 		//   - https://nftstorage.link/ipfs/bafybeighc4fkjnznrnps6ow34k3apyeibozroibwthueuy6tdizzwmat3a/TEST%204%20-%20string-theory.gif
-  } catch (error) {
-		console.log("YEEEEEE")
-    console.log(error);
-  }
+	} catch (error) {
+    	console.log(error);
+  	}
 
 	removeFiles(fileExtension) // remove local copy of thumbnail and video
   return metadata; //=> Token object
