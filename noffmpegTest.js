@@ -69,18 +69,25 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
   try {
     // make image thumbnail of video- fixed width 250px and autoscale height
     if (contentType.includes("video")) {
-      // write video to path in current directory
-      await fs.promises.writeFile("video" + fileExtension, imageBuffer);
+      // // write video to path in current directory
+      // await fs.promises.writeFile(
+      //   "video" + fileExtension,
+      //   imageBuffer
+      // );
 
-      // generate thumbnail from video file path (writes "thumbnail.png" to current directory)
-      await genThumbnail("./video" + fileExtension, "thumbnail.png", "250x?", {
-        path: pathToFfmpeg,
-      });
+      // // generate thumbnail from video file path (writes "thumbnail.png" to current directory)
+      // await genThumbnail(
+      //   "./video" + fileExtension,
+      //   "thumbnail.png",
+      //   "250x?",
+      //   { path: pathToFfmpeg }
+      // );
 
-      const imgThumbnail = await fileFromPath("./thumbnail.png");
+      // const imgThumbnail = await fileFromPath("./thumbnail.png");
 
-      // add "image" thumbnail attribute to metadata (otherwise we will get a warning if we try to store a video at the image attribute)
-      nft.image = imgThumbnail;
+      // // add "image" thumbnail attribute to metadata (otherwise we will get a warning if we try to store a video at the image attribute)
+      // nft.image = imgThumbnail;
+      nft.image = imageFile; // NOTE* Filecoin needs this .image attribute and the value must be a blob or file object!!!
 
       // nft.storage recommends adding this properties attribute
       nft.properties = {
@@ -186,7 +193,7 @@ async function uploadNFTMetadata(image, contentType, nftMetadata) {
     console.log(error);
   }
 
-  removeFiles(fileExtension); // remove local copy of thumbnail and video
+  // removeFiles(fileExtension); // remove local copy of thumbnail and video
   return metadata; //=> Token object
 }
 
@@ -203,6 +210,7 @@ async function main() {
 
   // get file type. ex "image/gif"
   const fileType = mime.getType(filePath);
+  console.log("FILE TYPE:", fileType);
 
   const metadata = {
     name: "TEST 8 - sailboat-starry-night",
